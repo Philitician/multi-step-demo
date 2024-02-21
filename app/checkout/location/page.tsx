@@ -1,6 +1,6 @@
 import { LocationStepForm } from "./_components/location-step-form";
 
-export default async function Step2Page() {
+export default async function LocationStepPage() {
   const ditto = await getDitto();
   return (
     <div className="flex flex-col gap-8">

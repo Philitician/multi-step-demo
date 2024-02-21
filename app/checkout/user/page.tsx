@@ -1,6 +1,6 @@
 import { UserStepForm } from "./_components/user-step-form";
 
-export default async function Step2Page() {
+export default async function UserStepPage() {
   const pikachu = await getPikachu();
   return (
     <div className="flex flex-col gap-8">

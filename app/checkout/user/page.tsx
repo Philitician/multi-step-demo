@@ -4,7 +4,7 @@ export default async function UserStepPage() {
   const pikachu = await getPikachu();
   return (
     <div className="flex flex-col gap-8">
-      <h1>RSC Pokemon: {JSON.stringify(pikachu.name)}</h1>
+      <h1>RSC Pokemon: {pikachu.name}</h1>
       <UserStepForm />
     </div>
   );

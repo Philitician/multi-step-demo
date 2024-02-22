@@ -14,7 +14,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useMultiStep } from "../../_components/multi-step-provider";
-import { checkoutAction } from "../_actions";
 
 export const locationStepSchema = z.object({
   address: z.string(),
@@ -30,8 +29,7 @@ export function LocationStepForm() {
   });
   const onSubmit = async (location: LocationStepValues) => {
     updateState({ location });
-    const newState = { ...state, location };
-    await checkoutAction(newState);
+    goTo("delivery");
   };
   return (
     <Form {...form}>

@@ -4,13 +4,15 @@ import { useRouter } from "next/navigation";
 import React, { createContext, useContext } from "react";
 import { UserStepValues } from "../user/_components/user-step-form";
 import { LocationStepValues } from "../location/_components/location-step-form";
+import { DeliveryStepValues } from "../delivery/schema";
 
 export type State = {
   user: UserStepValues;
   location: LocationStepValues;
+  delivery: DeliveryStepValues;
 };
 
-type Step = "user" | "location";
+type Step = "user" | "location" | "delivery";
 
 type MultiStepContext = {
   state: State;
@@ -28,6 +30,9 @@ export function MultiStepProvider({ children }: { children: React.ReactNode }) {
     },
     location: {
       address: "",
+    },
+    delivery: {
+      productDeliveries: [],
     },
   });
   const [step, setStep] = React.useState<Step>("user");

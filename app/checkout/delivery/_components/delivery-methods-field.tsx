@@ -20,6 +20,10 @@ import { DeliveryMethod, ProductVariant } from "../data";
 import { DeliveryStepValues } from "../schema";
 import { MultipleChoiceBlock } from "./multiple-choice-block";
 import { MultipleChoiceBlock as MultipleChoiceBlockType } from "@/lib/payload-types";
+import { InfoIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
 
 
 type ProductDeliveriesFieldProps = {
@@ -34,7 +38,7 @@ export function ProductDeliverySection(props: ProductDeliveriesFieldProps) {
   //             ?.zones.find((z) => z.id === zoneId);
 
   return (
-    <Accordion type="single" collapsible>
+    <Accordion type="single" collapsible defaultValue={`${props.productVariant.name} Alternativer`} className="bg-[#f8fcfa] p-4">
       <AccordionItem value={`${props.productVariant.name} Alternativer`}>
         <AccordionTrigger>Alternativer</AccordionTrigger>
         <AccordionContent>
@@ -78,19 +82,19 @@ function DeliveryMethodAccordionField({
                 );
               }}
             >
-              <Label
-                key={deliveryMethod.id}
-                htmlFor={`${deliveryMethod.id}`}
-                className="flex items-center space-x-2"
-              >
-                <div className="flex justify-between w-full">
-                  <div>{deliveryMethod.name}</div>
-                  <div>shippingPrice placeholder,–</div>
-                </div>
-              </Label>
+            <Label
+              key={deliveryMethod.id}
+              htmlFor={`${deliveryMethod.id}`}
+              className="flex items-center space-x-2 w-full"
+            >
+              <div className="flex justify-between text-left leading-6 w-full">
+                <div className="">{deliveryMethod.name}</div>
+                <div className="whitespace-nowrap ml-12"><b>10 000 000,–</b></div>
+              </div>
+            </Label>
             </AccordionRadioTrigger>
-            <AccordionContent className="flex flex-col gap-2 items-start">
-              <div>{deliveryMethod.description}</div>
+            <AccordionContent className="flex flex-col gap-2 items-start w-full">
+              <p className="text-gray-700 ml-6">{deliveryMethod.description}</p>
               <FormBlockFields
                 formBlocks={deliveryMethod.formBlocks}
                 productDeliveryIndex={productDeliveryIndex}
@@ -114,72 +118,94 @@ function FormBlockFields({
 }: FormBlocksFieldProps) {
   const { control } = useFormContext<DeliveryStepValues>();
   return (
-    <div>
+    <div className="w-full">
       {formBlocks.map((formBlock, formBlockIndex) => (
-        <FormField
+        <div
           key={formBlockIndex}
-          control={control}
-          name={`productDeliveries.${productDeliveryIndex}.alternative.formBlocks.${formBlockIndex}`}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{formBlock.title}</FormLabel>
-              <FormControl>
-                <div>
-                  {formBlock.blockType === "multiple-choice-block" ? (
-                    <RadioGroup defaultValue={field.value?.answer}
-                      onValueChange={(e) => {
-                        console.log("input changed", {
-                          existingFieldValue: field.value,
-                          newAnswer: e,
-                        });
-                        field.onChange({
-                          ...field.value,
-                          answer: e,
-                        });
-                      }}
-                    >
-                        {formBlock.choices.map((choice, choiceIndex) => (
-                            <div key={choice.id} className="flex items-center space-x-2">
-                                <RadioGroupItem value={choice.text} id={choice.id?.toString()} />
-                                <Label htmlFor={choice.id?.toString()}>{choice.text}</Label>
-                            </div>
-                        ))}
-                    </RadioGroup>
-                  ) : formBlock.blockType === "text-block" ? (
-                    <Input
-                      value={field.value?.answer || ""}
-                      onChange={(e) => {
-                        console.log("input changed", {
-                          existingFieldValue: field.value,
-                          newAnswer: e.target.value,
-                        });
-                        field.onChange({
-                          ...field.value,
-                          answer: e.target.value,
-                        });
-                      }}
-                    />
-                  ): formBlock.blockType === "text-area-block" ? (
-                    <textarea
-                      value={field.value?.answer || ""}
-                      onChange={(e) => {
-                        console.log("input changed", {
-                          existingFieldValue: field.value,
-                          newAnswer: e.target.value,
-                        });
-                        field.onChange({
-                          ...field.value,
-                          answer: e.target.value,
-                        });
-                      }}
-                    />
-                  ) : null}
+          className="bg-[#e6f2eb] rounded my-1 px-4 py-3"
+        >
+          <FormField
+            control={control}
+            name={`productDeliveries.${productDeliveryIndex}.alternative.formBlocks.${formBlockIndex}`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  <div className="flex justify-between">
+                    {/* TODO: Make this div/text wrap correctly. */}
+                    <div>{formBlock.title}</div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button type="button" style={{all: "unset"}} >
+                            <InfoIcon />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{formBlock.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                </FormLabel>
+                <FormControl>
+                  <div>
+                    {formBlock.blockType === "multiple-choice-block" ? (
+                      <RadioGroup defaultValue={field.value?.answer}
+                        onValueChange={(e) => {
+                          console.log("input changed", {
+                            existingFieldValue: field.value,
+                            newAnswer: e,
+                          });
+                          field.onChange({
+                            ...field.value,
+                            answer: e,
+                          });
+                        }}
+                        className="flex flex-row gap-5 items-start w-full justify-end"
+                      >
+                          {formBlock.choices.map((choice, choiceIndex) => (
+                              <div key={choice.id} className="flex items-center space-x-1">
+                                  <RadioGroupItem value={choice.text} id={choice.id?.toString()} className="bg-white"/>
+                                  <Label htmlFor={choice.id?.toString()}>{choice.text}</Label>
+                              </div>
+                          ))}
+                      </RadioGroup>
+                    ) : formBlock.blockType === "text-block" ? (
+                      <Input
+                        value={field.value?.answer || ""}
+                        onChange={(e) => {
+                          console.log("input changed", {
+                            existingFieldValue: field.value,
+                            newAnswer: e.target.value,
+                          });
+                          field.onChange({
+                            ...field.value,
+                            answer: e.target.value,
+                          });
+                        }}
+                      />
+                    ): formBlock.blockType === "text-area-block" ? (
+                      <textarea
+                        value={field.value?.answer || ""}
+                        onChange={(e) => {
+                          console.log("input changed", {
+                            existingFieldValue: field.value,
+                            newAnswer: e.target.value,
+                          });
+                          field.onChange({
+                            ...field.value,
+                            answer: e.target.value,
+                          });
+                        }}
+                      />
+                    ) : null}
+                    </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
       ))}
     </div>
   );

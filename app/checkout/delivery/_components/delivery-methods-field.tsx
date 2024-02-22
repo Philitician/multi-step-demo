@@ -14,10 +14,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup } from "@/components/ui/radio-group";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useFormContext } from "react-hook-form";
 import { DeliveryMethod, ProductVariant } from "../data";
 import { DeliveryStepValues } from "../schema";
+import { MultipleChoiceBlock } from "./multiple-choice-block";
+import { MultipleChoiceBlock as MultipleChoiceBlockType } from "@/lib/payload-types";
+
 
 type ProductDeliveriesFieldProps = {
   zoneId: number;
@@ -121,19 +124,57 @@ function FormBlockFields({
             <FormItem>
               <FormLabel>{formBlock.title}</FormLabel>
               <FormControl>
-                <Input
-                  value={field.value?.answer || ""}
-                  onChange={(e) => {
-                    console.log("input changed", {
-                      existingFieldValue: field.value,
-                      newAnswer: e.target.value,
-                    });
-                    field.onChange({
-                      ...field.value,
-                      answer: e.target.value,
-                    });
-                  }}
-                />
+                <div>
+                  {formBlock.blockType === "multiple-choice-block" ? (
+                    <RadioGroup defaultValue={field.value?.answer}
+                      onValueChange={(e) => {
+                        console.log("input changed", {
+                          existingFieldValue: field.value,
+                          newAnswer: e,
+                        });
+                        field.onChange({
+                          ...field.value,
+                          answer: e,
+                        });
+                      }}
+                    >
+                        {formBlock.choices.map((choice, choiceIndex) => (
+                            <div key={choice.id} className="flex items-center space-x-2">
+                                <RadioGroupItem value={choice.text} id={choice.id?.toString()} />
+                                <Label htmlFor={choice.id?.toString()}>{choice.text}</Label>
+                            </div>
+                        ))}
+                    </RadioGroup>
+                  ) : formBlock.blockType === "text-block" ? (
+                    <Input
+                      value={field.value?.answer || ""}
+                      onChange={(e) => {
+                        console.log("input changed", {
+                          existingFieldValue: field.value,
+                          newAnswer: e.target.value,
+                        });
+                        field.onChange({
+                          ...field.value,
+                          answer: e.target.value,
+                        });
+                      }}
+                    />
+                  ): formBlock.blockType === "text-area-block" ? (
+                    <textarea
+                      value={field.value?.answer || ""}
+                      onChange={(e) => {
+                        console.log("input changed", {
+                          existingFieldValue: field.value,
+                          newAnswer: e.target.value,
+                        });
+                        field.onChange({
+                          ...field.value,
+                          answer: e.target.value,
+                        });
+                      }}
+                    />
+                  ) : null}
+                  </div>
               </FormControl>
               <FormMessage />
             </FormItem>

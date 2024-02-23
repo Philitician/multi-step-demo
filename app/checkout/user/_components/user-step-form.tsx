@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/form";
 
 export const userStepSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1),
 });
 
 export type UserStepValues = z.infer<typeof userStepSchema>;

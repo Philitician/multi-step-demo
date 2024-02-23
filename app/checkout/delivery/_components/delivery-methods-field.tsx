@@ -73,6 +73,14 @@ function DeliveryMethodAccordionField({
               id={`${deliveryMethod.id}`}
               onClick={() => {
                 setValue(
+                  `productDeliveries.${productDeliveryIndex}.productId`,
+                  productVariant.product.id.toString()
+                )
+                setValue(
+                  `productDeliveries.${productDeliveryIndex}.alternative.deliveryMethodId`,
+                  deliveryMethod.id.toString()
+                )
+                setValue(
                   `productDeliveries.${productDeliveryIndex}.alternative.formBlocks`,
                   deliveryMethod.formBlocks.map(({ title, description }) => ({
                     title,
@@ -121,7 +129,7 @@ function FormBlockFields({
     <div className="w-full">
       {formBlocks.map((formBlock, formBlockIndex) => (
         <div
-          key={formBlockIndex}
+          key={formBlock.id.toString()}
           className="bg-[#e6f2eb] rounded my-1 px-4 py-3"
         >
           <FormField

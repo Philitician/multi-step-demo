@@ -26,7 +26,7 @@ export function DeliveryStepForm({ items }: Cart) {
   return (
     <FormProvider {...form}>
       <form
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(onSubmit, console.error)}
         className="flex flex-col gap-4"
       >
         <div className="divide-y-2">

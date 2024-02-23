@@ -6,6 +6,7 @@ export const deliveryStepSchema = z.object({
 			productId: z.string().min(1),
 			alternative: z.object({
 				deliveryMethodId: z.string().min(1),
+				shippingPrice: z.number(),
 				formBlocks: z.array(
 					z.object({
 						title: z.string().min(1),

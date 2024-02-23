@@ -16,10 +16,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useFormContext } from "react-hook-form";
-import { DeliveryMethod, ProductVariant } from "../data";
 import { DeliveryStepValues } from "../schema";
 import { MultipleChoiceBlock } from "./multiple-choice-block";
-import { MultipleChoiceBlock as MultipleChoiceBlockType } from "@/lib/payload-types";
+import {
+	DeliveryMethod,
+	ProductVariant,
+	MultipleChoiceBlock as MultipleChoiceBlockType,
+	Packaging,
+	DeliveryType,
+	Zone,
+	Product,
+} from "@/lib/payload-types";
 import { InfoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +36,8 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
+import { deduplicateArray } from "@/lib/utils";
+import { DeliveryMethodsWithShippingPrice } from "../types";
 
 type ProductDeliveriesFieldProps = {
 	zoneId: number;
@@ -68,59 +77,123 @@ function DeliveryMethodAccordionField({
 	productDeliveryIndex,
 }: ProductDeliveriesFieldProps) {
 	const { setValue } = useFormContext<DeliveryStepValues>();
-	const { deliveryMethods } =
-		productVariant.packagingGroup.packaging.deliveryType;
+
+	const deliveryType = (productVariant.packagingGroup.packaging as Packaging)
+		.deliveryType as DeliveryType;
+
+	const deliveryMethodsOnDeliveryType = deliveryType.deliveryMethods as
+		| DeliveryMethod[]
+		| undefined;
+
+	const zone = (
+		productVariant.zoneAvailabilities as NonNullable<
+			ProductVariant["zoneAvailabilities"]
+		>
+	)
+		.find((za) => (za.zones as Zone[]).some((z) => z.id === zoneId))
+		?.zones.find((z) => (z as Zone).id === zoneId) as Zone | undefined;
+
+	//console.log("zone:", zone);
+
+	const deliveryMethodPricesOnZone: DeliveryMethodsWithShippingPrice[] = (
+		zone?.deliveryMethodPrices?.filter((dmp) =>
+			deliveryMethodsOnDeliveryType?.some(
+				(dm) => dm.id === (dmp.deliveryMethod as DeliveryMethod).id,
+			),
+		) as NonNullable<Zone["deliveryMethodPrices"]>
+	).map((dmp) => ({
+		deliveryMethod: dmp.deliveryMethod as DeliveryMethod,
+		shippingPrice: dmp.shippingPrice,
+	}));
+
+	if (!deliveryMethodPricesOnZone || !deliveryMethodsOnDeliveryType) {
+		console.error(
+			"deliveryMethodsOnZone or deliveryMethodsOnDeliveryType is undefined",
+		);
+		return null;
+	}
+
+	// Group the deliveryMethodsOnDeliveryType and deliveryMethodPricesOnZone based on the deliveryMethod.id
+	const deliveryMethodsOnZoneAndDeliveryType: DeliveryMethodsWithShippingPrice[] =
+		deduplicateArray(
+			deliveryMethodsOnDeliveryType.map((deliveryMethod) => {
+				const deliveryMethodPrices = deliveryMethodPricesOnZone.find(
+					(dmp) => dmp.deliveryMethod.id === deliveryMethod.id,
+				);
+				return {
+					id: deliveryMethod.id,
+					deliveryMethod,
+					shippingPrice: deliveryMethodPrices
+						? deliveryMethodPrices.shippingPrice
+						: 0,
+				};
+			}),
+		);
+	console.log(deliveryMethodsOnZoneAndDeliveryType);
+
+	// find the zone.deliveryMethodPrices that contains deliveryMethod's which are also present in deliveryMethodsOnDeliveryType
+
 	return (
 		<Accordion type="single" collapsible={false}>
 			<RadioGroup>
-				{deliveryMethods.map((deliveryMethod) => (
-					<AccordionItem
-						key={deliveryMethod.id}
-						value={deliveryMethod.id.toString()}
-					>
-						<AccordionRadioTrigger
-							id={`${deliveryMethod.id}`}
-							onClick={() => {
-								setValue(
-									`productDeliveries.${productDeliveryIndex}.productId`,
-									productVariant.product.id.toString(),
-								);
-								setValue(
-									`productDeliveries.${productDeliveryIndex}.alternative.deliveryMethodId`,
-									deliveryMethod.id.toString(),
-								);
-								setValue(
-									`productDeliveries.${productDeliveryIndex}.alternative.formBlocks`,
-									deliveryMethod.formBlocks.map(({ title, description }) => ({
-										title,
-										description,
-										answer: "",
-									})),
-								);
-							}}
+				{deliveryMethodsOnZoneAndDeliveryType.map(
+					({ deliveryMethod, shippingPrice }) => (
+						<AccordionItem
+							key={deliveryMethod.id}
+							value={deliveryMethod.id.toString()}
 						>
-							<Label
-								key={deliveryMethod.id}
-								htmlFor={`${deliveryMethod.id}`}
-								className="flex items-center space-x-2 w-full"
+							<AccordionRadioTrigger
+								id={`${deliveryMethod.id}`}
+								onClick={() => {
+									setValue(
+										`productDeliveries.${productDeliveryIndex}.productId`,
+										(productVariant.product as Product).id.toString(),
+									);
+									setValue(
+										`productDeliveries.${productDeliveryIndex}.alternative.deliveryMethodId`,
+										deliveryMethod.id.toString(),
+									);
+									setValue(
+										`productDeliveries.${productDeliveryIndex}.alternative.shippingPrice`,
+										shippingPrice,
+									);
+									setValue(
+										`productDeliveries.${productDeliveryIndex}.alternative.formBlocks`,
+										deliveryMethod.formBlocks?.map(
+											({ title, description }) => ({
+												title,
+												description: description || "",
+												answer: "",
+											}),
+										) || [],
+									);
+								}}
 							>
-								<div className="flex justify-between text-left leading-6 w-full">
-									<div className="">{deliveryMethod.name}</div>
-									<div className="whitespace-nowrap ml-12">
-										<b>10 000 000,–</b>
+								<Label
+									key={deliveryMethod.id}
+									htmlFor={`${deliveryMethod.id}`}
+									className="flex items-center space-x-2 w-full"
+								>
+									<div className="flex justify-between text-left leading-6 w-full">
+										<div className="">{deliveryMethod.name}</div>
+										<div className="whitespace-nowrap ml-12">
+											<b>{shippingPrice.toLocaleString("no-nb")},–</b>
+										</div>
 									</div>
-								</div>
-							</Label>
-						</AccordionRadioTrigger>
-						<AccordionContent className="flex flex-col gap-2 items-start w-full">
-							<p className="text-gray-700 ml-6">{deliveryMethod.description}</p>
-							<FormBlockFields
-								formBlocks={deliveryMethod.formBlocks}
-								productDeliveryIndex={productDeliveryIndex}
-							/>
-						</AccordionContent>
-					</AccordionItem>
-				))}
+								</Label>
+							</AccordionRadioTrigger>
+							<AccordionContent className="flex flex-col gap-2 items-start w-full">
+								<p className="text-gray-700 ml-6">
+									{deliveryMethod.description}
+								</p>
+								<FormBlockFields
+									formBlocks={deliveryMethod.formBlocks}
+									productDeliveryIndex={productDeliveryIndex}
+								/>
+							</AccordionContent>
+						</AccordionItem>
+					),
+				)}
 			</RadioGroup>
 		</Accordion>
 	);
@@ -138,9 +211,9 @@ function FormBlockFields({
 	const { control } = useFormContext<DeliveryStepValues>();
 	return (
 		<div className="w-full">
-			{formBlocks.map((formBlock, formBlockIndex) => (
+			{formBlocks?.map((formBlock, formBlockIndex) => (
 				<div
-					key={formBlock.id.toString()}
+					key={formBlock.id?.toString()}
 					className="bg-[#e6f2eb] rounded my-1 px-4 py-3"
 				>
 					<FormField
@@ -183,7 +256,7 @@ function FormBlockFields({
 												}}
 												className="flex flex-row gap-5 items-start w-full justify-end"
 											>
-												{formBlock.choices.map((choice, choiceIndex) => (
+												{formBlock.choices?.map((choice, choiceIndex) => (
 													<div
 														key={choice.id}
 														className="flex items-center space-x-1"
@@ -199,22 +272,8 @@ function FormBlockFields({
 													</div>
 												))}
 											</RadioGroup>
-										) : formBlock.blockType === "text-block" ? (
-											<Input
-												value={field.value?.answer || ""}
-												onChange={(e) => {
-													console.log("input changed", {
-														existingFieldValue: field.value,
-														newAnswer: e.target.value,
-													});
-													field.onChange({
-														...field.value,
-														answer: e.target.value,
-													});
-												}}
-											/>
 										) : formBlock.blockType === "text-area-block" ? (
-											<textarea
+											<Input
 												value={field.value?.answer || ""}
 												onChange={(e) => {
 													console.log("input changed", {

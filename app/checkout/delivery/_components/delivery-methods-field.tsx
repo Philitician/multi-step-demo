@@ -17,11 +17,9 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useFormContext } from "react-hook-form";
 import { DeliveryStepValues } from "../schema";
-import { MultipleChoiceBlock } from "./multiple-choice-block";
 import {
 	DeliveryMethod,
 	ProductVariant,
-	MultipleChoiceBlock as MultipleChoiceBlockType,
 	Packaging,
 	DeliveryType,
 	Zone,
@@ -29,13 +27,13 @@ import {
 } from "@/lib/payload-types";
 import { InfoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator";
 import { deduplicateArray } from "@/lib/utils";
 import { DeliveryMethodsWithShippingPrice } from "../types";
 
@@ -46,10 +44,6 @@ type ProductDeliveriesFieldProps = {
 };
 
 export function ProductDeliverySection(props: ProductDeliveriesFieldProps) {
-	// const zone = productVariant.zoneAvailabilities
-	//             .find((za) => za.zones.some((z) => z.id === zoneId))
-	//             ?.zones.find((z) => z.id === zoneId);
-
 	return (
 		<Accordion
 			type="single"
@@ -68,14 +62,16 @@ export function ProductDeliverySection(props: ProductDeliveriesFieldProps) {
 }
 
 type DeliveryMethodAccordionFieldProps = {
-	deliveryMethods: DeliveryMethod[];
+	zoneId: number;
+	productVariant: ProductVariant;
+	productDeliveryIndex: number;
 };
 
 function DeliveryMethodAccordionField({
 	zoneId,
 	productVariant,
 	productDeliveryIndex,
-}: ProductDeliveriesFieldProps) {
+}: DeliveryMethodAccordionFieldProps) {
 	const { setValue } = useFormContext<DeliveryStepValues>();
 
 	const deliveryType = (productVariant.packagingGroup.packaging as Packaging)
@@ -129,7 +125,7 @@ function DeliveryMethodAccordionField({
 				};
 			}),
 		);
-	console.log(deliveryMethodsOnZoneAndDeliveryType);
+	// console.log(deliveryMethodsOnZoneAndDeliveryType);
 
 	// find the zone.deliveryMethodPrices that contains deliveryMethod's which are also present in deliveryMethodsOnDeliveryType
 
@@ -177,7 +173,11 @@ function DeliveryMethodAccordionField({
 									<div className="flex justify-between text-left leading-6 w-full">
 										<div className="">{deliveryMethod.name}</div>
 										<div className="whitespace-nowrap ml-12">
-											<b>{shippingPrice.toLocaleString("no-nb")},–</b>
+											<b>
+												{shippingPrice >= 0
+													? `${shippingPrice.toLocaleString("no-nb")},-`
+													: "Avtales"}
+											</b>
 										</div>
 									</div>
 								</Label>
@@ -225,18 +225,20 @@ function FormBlockFields({
 									<div className="flex justify-between">
 										{/* TODO: Make this div/text wrap correctly. */}
 										<div>{formBlock.title}</div>
-										<TooltipProvider>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button type="button" style={{ all: "unset" }}>
-														<InfoIcon />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													<p>{formBlock.description}</p>
-												</TooltipContent>
-											</Tooltip>
-										</TooltipProvider>
+										{formBlock.description && (
+											<TooltipProvider>
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<Button type="button" style={{ all: "unset" }}>
+															<InfoIcon />
+														</Button>
+													</TooltipTrigger>
+													<TooltipContent>
+														<p>{formBlock.description}</p>
+													</TooltipContent>
+												</Tooltip>
+											</TooltipProvider>
+										)}
 									</div>
 								</FormLabel>
 								<FormControl>
@@ -245,10 +247,6 @@ function FormBlockFields({
 											<RadioGroup
 												defaultValue={field.value?.answer}
 												onValueChange={(e) => {
-													console.log("input changed", {
-														existingFieldValue: field.value,
-														newAnswer: e,
-													});
 													field.onChange({
 														...field.value,
 														answer: e,
@@ -273,19 +271,18 @@ function FormBlockFields({
 												))}
 											</RadioGroup>
 										) : formBlock.blockType === "text-area-block" ? (
-											<Input
-												value={field.value?.answer || ""}
-												onChange={(e) => {
-													console.log("input changed", {
-														existingFieldValue: field.value,
-														newAnswer: e.target.value,
-													});
-													field.onChange({
-														...field.value,
-														answer: e.target.value,
-													});
-												}}
-											/>
+											<>
+												<Textarea
+													id={formBlock.id?.toString()}
+													placeholder={formBlock.placeholder || ""}
+													onChange={(e) => {
+														field.onChange({
+															...field.value,
+															answer: e.target.value,
+														});
+													}}
+												/>
+											</>
 										) : null}
 									</div>
 								</FormControl>

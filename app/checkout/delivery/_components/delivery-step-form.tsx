@@ -8,9 +8,10 @@ import { FormProvider, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useMultiStep } from "../../_components/multi-step-provider";
 import { checkoutAction } from "../_actions";
-import { Cart } from "../data";
+import { Cart, ProductVariant } from "@/lib/payload-types";
 import { DeliveryStepValues, deliveryStepSchema } from "../schema";
 import { ProductDeliverySection } from "./delivery-methods-field";
+import { redirect } from "next/navigation";
 
 export function DeliveryStepForm({ items }: Cart) {
 	const { state, updateState, goTo } = useMultiStep();
@@ -23,6 +24,7 @@ export function DeliveryStepForm({ items }: Cart) {
 		const newState = { ...state, delivery };
 		await checkoutAction(newState);
 	};
+	if (!items) redirect("/");
 	return (
 		<FormProvider {...form}>
 			<form
@@ -32,10 +34,10 @@ export function DeliveryStepForm({ items }: Cart) {
 				<div className="divide-y-2">
 					{items.map(({ zoneId, productVariant }, index) => (
 						<ProductDeliverySection
-							key={productVariant.id}
+							key={(productVariant as ProductVariant).id}
 							productDeliveryIndex={index}
-							zoneId={zoneId}
-							productVariant={productVariant}
+							zoneId={zoneId as number}
+							productVariant={productVariant as ProductVariant}
 						/>
 					))}
 				</div>

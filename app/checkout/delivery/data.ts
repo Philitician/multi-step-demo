@@ -246,8 +246,28 @@ export const cart = {
 									updatedAt: "2024-02-08T13:40:11.835Z",
 									createdAt: "2024-02-08T08:57:51.293Z",
 								},
+								{
+									id: 3,
+									name: "Kontakt meg for avtale",
+									description:
+										"Vi tar kontakt via e-post i løpet av 2-3 virkedager",
+									maximumLoad: [],
+									formBlocks: [
+										{
+											id: "65d8bf6d5c758a5404994129",
+											title: "Skriv en melding (valgfritt)",
+											description: "test beskrivelse",
+											placeholder: "Skriv en melding",
+											blockName: "Skriv en melding (valgfritt)",
+											blockType: "text-area-block",
+										},
+									],
+									isHomeDelivery: false,
+									updatedAt: "2024-02-23T15:53:17.559Z",
+									createdAt: "2024-02-23T15:53:17.559Z",
+								},
 							],
-							updatedAt: "2024-02-21T14:42:47.998Z",
+							updatedAt: "2024-02-24T14:50:20.657Z",
 							createdAt: "2024-01-09T08:18:04.972Z",
 						},
 						amountOptions: [
@@ -432,6 +452,31 @@ export const cart = {
 											createdAt: "2024-02-08T08:57:51.293Z",
 										},
 									},
+									{
+										_order: 3,
+										id: "65d8becfa26cb8583f3dc351",
+										shippingPrice: -1,
+										deliveryMethod: {
+											id: 3,
+											name: "Kontakt meg for avtale",
+											description:
+												"Vi tar kontakt via e-post i løpet av 2-3 virkedager",
+											maximumLoad: [],
+											formBlocks: [
+												{
+													id: "65d8bf6d5c758a5404994129",
+													title: "Skriv en melding (valgfritt)",
+													description: "test beskrivelse",
+													placeholder: "Skriv en melding",
+													blockName: "Skriv en melding (valgfritt)",
+													blockType: "text-area-block",
+												},
+											],
+											isHomeDelivery: false,
+											updatedAt: "2024-02-23T15:53:17.559Z",
+											createdAt: "2024-02-23T15:53:17.559Z",
+										},
+									},
 								],
 								places: [
 									{
@@ -501,7 +546,7 @@ export const cart = {
 										postalLocation: "LILLESAND",
 									},
 								],
-								updatedAt: "2024-02-22T14:18:02.590Z",
+								updatedAt: "2024-02-23T15:53:39.806Z",
 								createdAt: "2023-12-06T12:11:08.232Z",
 							},
 						],

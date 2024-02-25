@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/accordion";
 import {
 	FormControl,
+	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
@@ -15,8 +16,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useFormContext } from "react-hook-form";
-import { DeliveryStepValues } from "../schema";
+import { FieldErrors, useFormContext } from "react-hook-form";
+import { DeliveryStepValues, HomeDeliveryExtendedValues } from "../schema";
 import {
 	DeliveryMethod,
 	ProductVariant,
@@ -25,7 +26,12 @@ import {
 	Zone,
 	Product,
 } from "@/lib/payload-types";
-import { CalendarIcon, InfoIcon } from "lucide-react";
+import {
+	CalendarIcon,
+	ChevronDownIcon,
+	ClockIcon,
+	InfoIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -34,9 +40,13 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn, deduplicateArray } from "@/lib/utils";
+import { capitalizeFirstLetter, cn, deduplicateArray } from "@/lib/utils";
 import { DeliveryMethodsWithShippingPrice } from "../types";
-import { Popover, PopoverTrigger } from "@/components/ui/popover";
+import {
+	Popover,
+	PopoverTrigger,
+	PopoverContent,
+} from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -46,6 +56,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import React from "react";
+import { nb } from "date-fns/locale";
 
 type ProductDeliveriesFieldProps = {
 	zoneId: number;
@@ -151,6 +164,9 @@ function DeliveryMethodAccordionField({
 							<AccordionRadioTrigger
 								id={`${deliveryMethod.id}`}
 								onClick={() => {
+									deliveryMethod.isHomeDelivery
+										? setValue("isDeliveredToHome", true)
+										: setValue("isDeliveredToHome", false);
 									setValue(
 										`productDeliveries.${productDeliveryIndex}.productId`,
 										(productVariant.product as Product).id.toString(),
@@ -218,91 +234,105 @@ function FormBlockFields({
 	deliveryMethod,
 	productDeliveryIndex,
 }: FormBlocksFieldProps) {
-	const { control } = useFormContext<DeliveryStepValues>();
+	const {
+		control,
+		formState: { errors },
+	} = useFormContext<DeliveryStepValues>();
 	return (
 		<div className="w-full">
-			{deliveryMethod.formBlocks?.map((formBlock, formBlockIndex) => (
-				<div
-					key={formBlock.id?.toString()}
-					className="bg-[#e6f2eb] rounded my-1 px-4 py-3"
-				>
-					<FormField
-						control={control}
-						name={`productDeliveries.${productDeliveryIndex}.alternative.formBlocks.${formBlockIndex}`}
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>
-									<div className="flex justify-between">
-										{/* TODO: Make this div/text wrap correctly. */}
-										<div>{formBlock.title}</div>
-										{formBlock.description && (
-											<TooltipProvider>
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<Button type="button" style={{ all: "unset" }}>
-															<InfoIcon />
-														</Button>
-													</TooltipTrigger>
-													<TooltipContent>
-														<p>{formBlock.description}</p>
-													</TooltipContent>
-												</Tooltip>
-											</TooltipProvider>
-										)}
-									</div>
-								</FormLabel>
-								<FormControl>
-									<div>
-										{/* TODO: extract the form blocks to a separate component */}
-										{formBlock.blockType === "multiple-choice-block" ? (
-											<RadioGroup
-												defaultValue={field.value?.answer}
-												onValueChange={(e) => {
-													field.onChange({
-														...field.value,
-														answer: e,
-													});
-												}}
-												className="flex flex-row gap-5 items-start w-full justify-end"
-											>
-												{formBlock.choices?.map((choice, choiceIndex) => (
-													<div
-														key={choice.id}
-														className="flex items-center space-x-1"
-													>
-														<RadioGroupItem
-															value={choice.text}
-															id={choice.id?.toString()}
-															className="bg-white"
-														/>
-														<Label htmlFor={choice.id?.toString()}>
-															{choice.text}
-														</Label>
-													</div>
-												))}
-											</RadioGroup>
-										) : formBlock.blockType === "text-area-block" ? (
-											<>
-												<Textarea
-													id={formBlock.id?.toString()}
-													placeholder={formBlock.placeholder || ""}
-													onChange={(e) => {
+			{deliveryMethod.formBlocks?.map((formBlock, formBlockIndex) => {
+				// check if the formBlock has errors
+				const formBlockErrors =
+					errors.productDeliveries?.[productDeliveryIndex]?.alternative
+						?.formBlocks?.[formBlockIndex]?.answer;
+				return (
+					<div
+						key={formBlock.id?.toString()}
+						// change background to red if formBlock has errors
+						className={`${
+							formBlockErrors
+								? "bg-red-500 bg-opacity-20 shadow-red-500 shadow mt-2 mb-3"
+								: "bg-[#e6f2eb]"
+						} rounded my-1 px-4 py-3`}
+						// TODO: Make background change to red if formBlock has errors
+					>
+						<FormField
+							control={control}
+							name={`productDeliveries.${productDeliveryIndex}.alternative.formBlocks.${formBlockIndex}`}
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>
+										<div className="flex justify-between">
+											{/* TODO: Make this div/text wrap correctly. */}
+											<div>{formBlock.title}</div>
+											{formBlock.description && (
+												<TooltipProvider>
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Button type="button" style={{ all: "unset" }}>
+																<InfoIcon className="stroke-primary" />
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent>
+															<p>{formBlock.description}</p>
+														</TooltipContent>
+													</Tooltip>
+												</TooltipProvider>
+											)}
+										</div>
+									</FormLabel>
+									<FormControl>
+										<div>
+											{/* TODO: extract the form blocks to a separate component */}
+											{formBlock.blockType === "multiple-choice-block" ? (
+												<RadioGroup
+													defaultValue={field.value?.answer}
+													onValueChange={(e) => {
 														field.onChange({
 															...field.value,
-															answer: e.target.value,
+															answer: e,
 														});
 													}}
-												/>
-											</>
-										) : null}
-									</div>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-				</div>
-			))}
+													className="flex flex-row gap-5 items-start w-full justify-end"
+												>
+													{formBlock.choices?.map((choice, choiceIndex) => (
+														<div
+															key={choice.id}
+															className="flex items-center space-x-1"
+														>
+															<RadioGroupItem
+																value={choice.text}
+																id={choice.id?.toString()}
+																className="bg-white"
+															/>
+															<Label htmlFor={choice.id?.toString()}>
+																{choice.text}
+															</Label>
+														</div>
+													))}
+												</RadioGroup>
+											) : formBlock.blockType === "text-area-block" ? (
+												<>
+													<Textarea
+														id={formBlock.id?.toString()}
+														placeholder={formBlock.placeholder || ""}
+														onChange={(e) => {
+															field.onChange({
+																...field.value,
+																answer: e.target.value,
+															});
+														}}
+													/>
+												</>
+											) : null}
+										</div>
+									</FormControl>
+								</FormItem>
+							)}
+						/>
+					</div>
+				);
+			})}
 
 			{deliveryMethod.isHomeDelivery && (
 				<HomeDeliveryFields deliveryMethod={deliveryMethod} />
@@ -314,77 +344,208 @@ function FormBlockFields({
 function HomeDeliveryFields({
 	deliveryMethod,
 }: { deliveryMethod: DeliveryMethod }) {
-	// TODO: Add this to the form
+	const {
+		control,
+		getValues,
+		formState: { errors },
+	} = useFormContext<DeliveryStepValues>();
+
+	// type the errors correctly. This is needed because discriminated unions returns the wrong type
+	const typedErrors = errors as FieldErrors<HomeDeliveryExtendedValues>;
+
 	return (
 		<>
-			<div
-				key={`deliveryWhileHome${deliveryMethod.id?.toString()}`}
-				className="bg-[#e6f2eb] rounded my-1 px-4 py-6"
-			>
-				<div className="flex items-center space-x-2">
-					<RadioGroup className="flex flex-col items-start gap-3">
-						<div className="flex items-center gap-2">
-							<RadioGroupItem value="true" id="true" />
-							<Label htmlFor="true">
-								Ordren kan leveres når jeg ikke er hjemme
-							</Label>
+			<FormField
+				control={control}
+				name="isDeliveredWhileNotHome"
+				render={({ field }) => {
+					const isDeliveredWhileNotHomeErrors =
+						typedErrors.isDeliveredWhileNotHome;
+					return (
+						<div
+							className={`${
+								isDeliveredWhileNotHomeErrors
+									? "bg-red-500 bg-opacity-20 shadow-red-500 shadow mt-2 mb-3"
+									: "bg-[#e6f2eb]"
+							} rounded my-1 px-4 py-6`}
+						>
+							<FormItem className="space-y-3">
+								<FormControl>
+									<RadioGroup
+										onValueChange={field.onChange}
+										defaultValue={field.value?.toString()}
+										className="flex flex-col gap-3"
+									>
+										<FormItem className="flex items-center gap-3 space-y-0 space-x-0">
+											<FormControl>
+												<RadioGroupItem value="true" className="bg-white" />
+											</FormControl>
+											<Label // Use Label here instead of FormLabel, so that the color doesn't change when errors are present
+											>
+												Ordren kan leveres når jeg ikke er hjemme
+											</Label>
+										</FormItem>{" "}
+										<FormItem className="flex items-center gap-3 space-y-0 space-x-0">
+											<FormControl>
+												<RadioGroupItem value="false" className="bg-white" />
+											</FormControl>
+											<Label // Use Label here instead of FormLabel, so that the color doesn't change when errors are present
+											>
+												Jeg ønsker å være hjemme ved levering
+											</Label>
+										</FormItem>
+									</RadioGroup>
+								</FormControl>
+							</FormItem>
 						</div>
-						<div className="flex items-center gap-2">
-							<RadioGroupItem value="false" id="false" />
-							<Label htmlFor="false">
-								Jeg ønsker å være hjemme ved levering
-							</Label>
-						</div>
-					</RadioGroup>
-				</div>
-			</div>
-			<div
-				key={`deliveryDate${deliveryMethod.id?.toString()}`}
-				className="bg-[#e6f2eb] rounded my-1 px-4 py-6"
+					);
+				}}
+			/>
+			<div // TODO: change background to red if either the date or time has errors
+				className={`${
+					typedErrors.deliveryTime?.deliveryDate ||
+					typedErrors.deliveryTime?.deliveryTimeRange
+						? "bg-red-500 bg-opacity-20 shadow-red-500 shadow mt-2 mb-3"
+						: "bg-[#e6f2eb]"
+				} rounded my-1 px-4 py-6`}
 			>
-				{/* TODO: add datepicker from shadcn https://ui.shadcn.com/docs/components/date-picker#form */}
 				<div className="flex flex-col items-start">
 					<Label htmlFor="">Velg når du ønsker å få ordren levert</Label>
 					<div
 						id={`deliveryTimeAndDate${deliveryMethod.id?.toString()}`}
 						className="flex w-full gap-2 py-4 justify-between"
 					>
-						<div className="flex flex-col items-start w-full gap-1">
-							<Label htmlFor="deliveryDate">Dato</Label>
-							<Input
-								type="date"
-								id={`deliveryDate${deliveryMethod.id?.toString()}`}
-								placeholder="Dato"
-							/>
-						</div>
-						<div className="flex flex-col items-start w-full gap-1">
-							<Label htmlFor="deliveryTimeRange">Tidspunkt</Label>
-							<Select>
-								<SelectTrigger>
-									<SelectValue placeholder="Tidspunkt" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectGroup>
-										{/* TODO: find out home many time options should be in the list */}
-										<SelectLabel>Tidspunkt (fra-til)</SelectLabel>
-										<SelectItem value="00:00-03:00">00:00-03:00</SelectItem>
-										<SelectItem value="03:00-06:00">03:00-06:00</SelectItem>
-										<SelectItem value="06:00-09:00">06:00-09:00</SelectItem>
-										<SelectItem value="09:00-12:00">09:00-12:00</SelectItem>
-										<SelectItem value="12:00-15:00">12:00-15:00</SelectItem>
-										<SelectItem value="15:00-18:00">15:00-18:00</SelectItem>
-										<SelectItem value="18:00-21:00">18:00-21:00</SelectItem>
-										<SelectItem value="21:00-00:00">21:00-00:00</SelectItem>
-									</SelectGroup>
-								</SelectContent>
-							</Select>
-						</div>
+						<FormField
+							control={control}
+							name="deliveryTime.deliveryDate"
+							render={({ field }) => (
+								<FormItem className="flex flex-col items-start w-full gap-1">
+									<FormLabel>Dato</FormLabel>
+									<Popover>
+										<PopoverTrigger asChild>
+											<FormControl>
+												<Button
+													variant={"outline"}
+													className={cn(
+														"w-full pl-3 text-left font-normal gap-1",
+														!field.value && "text-muted-foreground",
+													)}
+												>
+													<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+													<div className="flex w-full justify-between items-center">
+														{field.value ? (
+															field.value.toLocaleDateString("no-nb")
+														) : (
+															<span>Velg en Dato</span>
+														)}
+														<ChevronDownIcon className="ml-2 h-4 w-4 opacity-50" />
+													</div>
+												</Button>
+											</FormControl>
+										</PopoverTrigger>
+										<PopoverContent className="w-auto p-0" align="start">
+											<Calendar
+												mode="single"
+												selected={field.value}
+												onSelect={field.onChange}
+												// TODO: Find out how many days from now the user can select a delivery date. is this always the same, or can it vary depending on the delivery method or product?
+												fromDate={new Date(Date.now() + 3600 * 1000 * 24 * 3)} // 3 days from now
+												weekStartsOn={1}
+												// set locale to norwegian
+												locale={nb}
+												initialFocus
+											/>
+										</PopoverContent>
+									</Popover>
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={control}
+							name="deliveryTime.deliveryTimeRange"
+							render={({ field }) => (
+								<FormItem className="flex flex-col items-start w-full gap-1">
+									<FormLabel>Tidspunkt</FormLabel>
+									<Select
+										onValueChange={field.onChange}
+										defaultValue={JSON.stringify(field.value)}
+									>
+										<FormControl>
+											<SelectTrigger>
+												<div className="flex flex-row items-center gap-1">
+													<ClockIcon className="h-4 w-4 opacity-50" />
+													<SelectValue placeholder="Tidspunkt" />
+												</div>
+											</SelectTrigger>
+										</FormControl>
+										<SelectContent>
+											<SelectGroup
+											// TODO: find out home many time options should be in the list
+											>
+												<SelectLabel>Tidspunkt (fra-til)</SelectLabel>
+												<SelectItem value={'{from:"00.00", to:"03.00"}'}>
+													00:00-03:00
+												</SelectItem>
+												<SelectItem value={'{from:"03.00", to:"06.00"}'}>
+													03:00-06:00
+												</SelectItem>
+												<SelectItem value={'{from:"06.00", to:"09.00"}'}>
+													06:00-09:00
+												</SelectItem>
+												<SelectItem value={'{from:"09.00", to:"12.00"}'}>
+													09:00-12:00
+												</SelectItem>
+												<SelectItem value={'{from:"12.00", to:"15.00"}'}>
+													12:00-15:00
+												</SelectItem>
+												<SelectItem value={'{from:"15.00", to:"18.00"}'}>
+													15:00-18:00
+												</SelectItem>
+												<SelectItem value={'{from:"18.00", to:"21.00"}'}>
+													18:00-21:00
+												</SelectItem>
+												<SelectItem value={'{from:"21.00", to:"00.00"}'}>
+													21:00-00:00
+												</SelectItem>
+											</SelectGroup>
+										</SelectContent>
+									</Select>
+								</FormItem>
+							)}
+						/>
 					</div>
-					<div className="mt-2">
-						<p>
-							<b>Levering:</b> `chosenDate.toText` mellom kl. `chosenTime`
-						</p>
-					</div>
+					{
+						// TODO: Make deliveryTime.deliveryDate and deliveryTime.deliveryTimeRange responsive
+						getValues("deliveryTime.deliveryDate") && (
+							<div>
+								<b>Levering: </b>
+								{capitalizeFirstLetter(
+									// TODO: Make deliveryDate responsive
+									getValues("deliveryTime.deliveryDate").toLocaleDateString(
+										"no-nb",
+										{
+											weekday: "long",
+											day: "numeric",
+											month: "long",
+											year: "numeric",
+										},
+									),
+								)}
+								{
+									// TODO: Make deliveryTimeRange responsive
+									getValues("deliveryTime.deliveryTimeRange") && (
+										<span className="px-0 mx-0">
+											{" "}
+											mellom kl.{" "}
+											{JSON.stringify(
+												getValues("deliveryTime.deliveryTimeRange"),
+											)}
+										</span>
+									)
+								}
+							</div>
+						)
+					}
 				</div>
 			</div>
 		</>

@@ -9,7 +9,7 @@ import { z } from "zod";
 import { useMultiStep } from "../../_components/multi-step-provider";
 import { checkoutAction } from "../_actions";
 import { Cart, ProductVariant } from "@/lib/payload-types";
-import { DeliveryStepValues, deliveryStepSchema } from "../schema";
+import { DeliveryStepValues, discriminatedDeliveryFormSchema } from "../schema";
 import { ProductDeliverySection } from "./delivery-methods-field";
 import { redirect } from "next/navigation";
 
@@ -17,7 +17,7 @@ export function DeliveryStepForm({ items }: Cart) {
 	const { state, updateState, goTo } = useMultiStep();
 	const form = useForm<DeliveryStepValues>({
 		defaultValues: state.delivery,
-		resolver: zodResolver(deliveryStepSchema),
+		resolver: zodResolver(discriminatedDeliveryFormSchema),
 	});
 	const onSubmit = async (delivery: DeliveryStepValues) => {
 		updateState({ delivery });

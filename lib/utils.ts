@@ -15,3 +15,7 @@ export function deduplicateArray<T extends { id: unknown }>(array: T[]): T[] {
 		return false;
 	});
 }
+
+export function capitalizeFirstLetter(string: string) {
+	return string.charAt(0).toUpperCase() + string.slice(1);
+}

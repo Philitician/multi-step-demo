@@ -561,14 +561,3 @@ export const cart = {
 	updatedAt: "2024-02-22T14:22:18.089Z",
 	createdAt: "2024-02-22T11:39:12.715Z",
 };
-
-export type Cart = typeof cart;
-export type CartItem = Cart["items"][number];
-export type ProductVariant = CartItem["productVariant"];
-type DeliveryType =
-	ProductVariant["packagingGroup"]["packaging"]["deliveryType"];
-export type DeliveryMethod = DeliveryType["deliveryMethods"][number];
-
-export type ZoneAvailability = ProductVariant["zoneAvailabilities"][number];
-export type Zone = ZoneAvailability["zones"][number];
-export type DeliveryMethodPrice = Zone["deliveryMethodPrices"][number];

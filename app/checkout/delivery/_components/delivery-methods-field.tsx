@@ -25,7 +25,7 @@ import {
 	Zone,
 	Product,
 } from "@/lib/payload-types";
-import { InfoIcon } from "lucide-react";
+import { CalendarIcon, InfoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -34,8 +34,18 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { deduplicateArray } from "@/lib/utils";
+import { cn, deduplicateArray } from "@/lib/utils";
 import { DeliveryMethodsWithShippingPrice } from "../types";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectLabel,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 
 type ProductDeliveriesFieldProps = {
 	zoneId: number;
@@ -187,7 +197,7 @@ function DeliveryMethodAccordionField({
 									{deliveryMethod.description}
 								</p>
 								<FormBlockFields
-									formBlocks={deliveryMethod.formBlocks}
+									deliveryMethod={deliveryMethod}
 									productDeliveryIndex={productDeliveryIndex}
 								/>
 							</AccordionContent>
@@ -200,18 +210,18 @@ function DeliveryMethodAccordionField({
 }
 
 type FormBlocksFieldProps = {
-	formBlocks: DeliveryMethod["formBlocks"];
+	deliveryMethod: DeliveryMethod;
 	productDeliveryIndex: number;
 };
 
 function FormBlockFields({
-	formBlocks,
+	deliveryMethod,
 	productDeliveryIndex,
 }: FormBlocksFieldProps) {
 	const { control } = useFormContext<DeliveryStepValues>();
 	return (
 		<div className="w-full">
-			{formBlocks?.map((formBlock, formBlockIndex) => (
+			{deliveryMethod.formBlocks?.map((formBlock, formBlockIndex) => (
 				<div
 					key={formBlock.id?.toString()}
 					className="bg-[#e6f2eb] rounded my-1 px-4 py-3"
@@ -243,6 +253,7 @@ function FormBlockFields({
 								</FormLabel>
 								<FormControl>
 									<div>
+										{/* TODO: extract the form blocks to a separate component */}
 										{formBlock.blockType === "multiple-choice-block" ? (
 											<RadioGroup
 												defaultValue={field.value?.answer}
@@ -292,6 +303,90 @@ function FormBlockFields({
 					/>
 				</div>
 			))}
+
+			{deliveryMethod.isHomeDelivery && (
+				<HomeDeliveryFields deliveryMethod={deliveryMethod} />
+			)}
 		</div>
+	);
+}
+
+function HomeDeliveryFields({
+	deliveryMethod,
+}: { deliveryMethod: DeliveryMethod }) {
+	// TODO: Add this to the form
+	return (
+		<>
+			<div
+				key={`deliveryWhileHome${deliveryMethod.id?.toString()}`}
+				className="bg-[#e6f2eb] rounded my-1 px-4 py-6"
+			>
+				<div className="flex items-center space-x-2">
+					<RadioGroup className="flex flex-col items-start gap-3">
+						<div className="flex items-center gap-2">
+							<RadioGroupItem value="true" id="true" />
+							<Label htmlFor="true">
+								Ordren kan leveres når jeg ikke er hjemme
+							</Label>
+						</div>
+						<div className="flex items-center gap-2">
+							<RadioGroupItem value="false" id="false" />
+							<Label htmlFor="false">
+								Jeg ønsker å være hjemme ved levering
+							</Label>
+						</div>
+					</RadioGroup>
+				</div>
+			</div>
+			<div
+				key={`deliveryDate${deliveryMethod.id?.toString()}`}
+				className="bg-[#e6f2eb] rounded my-1 px-4 py-6"
+			>
+				{/* TODO: add datepicker from shadcn https://ui.shadcn.com/docs/components/date-picker#form */}
+				<div className="flex flex-col items-start">
+					<Label htmlFor="">Velg når du ønsker å få ordren levert</Label>
+					<div
+						id={`deliveryTimeAndDate${deliveryMethod.id?.toString()}`}
+						className="flex w-full gap-2 py-4 justify-between"
+					>
+						<div className="flex flex-col items-start w-full gap-1">
+							<Label htmlFor="deliveryDate">Dato</Label>
+							<Input
+								type="date"
+								id={`deliveryDate${deliveryMethod.id?.toString()}`}
+								placeholder="Dato"
+							/>
+						</div>
+						<div className="flex flex-col items-start w-full gap-1">
+							<Label htmlFor="deliveryTimeRange">Tidspunkt</Label>
+							<Select>
+								<SelectTrigger>
+									<SelectValue placeholder="Tidspunkt" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectGroup>
+										{/* TODO: find out home many time options should be in the list */}
+										<SelectLabel>Tidspunkt (fra-til)</SelectLabel>
+										<SelectItem value="00:00-03:00">00:00-03:00</SelectItem>
+										<SelectItem value="03:00-06:00">03:00-06:00</SelectItem>
+										<SelectItem value="06:00-09:00">06:00-09:00</SelectItem>
+										<SelectItem value="09:00-12:00">09:00-12:00</SelectItem>
+										<SelectItem value="12:00-15:00">12:00-15:00</SelectItem>
+										<SelectItem value="15:00-18:00">15:00-18:00</SelectItem>
+										<SelectItem value="18:00-21:00">18:00-21:00</SelectItem>
+										<SelectItem value="21:00-00:00">21:00-00:00</SelectItem>
+									</SelectGroup>
+								</SelectContent>
+							</Select>
+						</div>
+					</div>
+					<div className="mt-2">
+						<p>
+							<b>Levering:</b> `chosenDate.toText` mellom kl. `chosenTime`
+						</p>
+					</div>
+				</div>
+			</div>
+		</>
 	);
 }

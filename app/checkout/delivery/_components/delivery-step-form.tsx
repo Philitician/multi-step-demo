@@ -26,6 +26,7 @@ export function DeliveryStepForm({ items }: Cart) {
 	};
 	if (!items) redirect("/");
 	return (
+		// Can possibly be changed to <Form {...form}> without the need for FormProvider. Needs further testing
 		<FormProvider {...form}>
 			<form
 				onSubmit={form.handleSubmit(onSubmit, console.error)}

@@ -241,9 +241,27 @@ export const cart = {
 											],
 											blockType: "multiple-choice-block",
 										},
+										{
+											id: "65dc650622ddb96d2a6a99bc",
+											icon: "plus",
+											title:
+												"Du kan legge til 6 tonn uten tillegg i frakt for å fylle opp lastebilen.",
+											description:
+												"Tips: Hvis du fyller opp lastebilen betaler du mindre per tonn!",
+											blockName:
+												"Du kan legge til 6 tonn uten tillegg i frakt for å fylle opp lastebilen.",
+											choices: [
+												{
+													_order: 1,
+													id: "65dc653c22ddb96d2a6a99bd",
+													text: "Ja takk, fyll opp lastebilen",
+												},
+											],
+											blockType: "multiple-choice-block",
+										},
 									],
 									isHomeDelivery: true,
-									updatedAt: "2024-02-08T13:40:11.835Z",
+									updatedAt: "2024-02-26T10:19:07.406Z",
 									createdAt: "2024-02-08T08:57:51.293Z",
 								},
 								{
@@ -446,9 +464,27 @@ export const cart = {
 													],
 													blockType: "multiple-choice-block",
 												},
+												{
+													id: "65dc650622ddb96d2a6a99bc",
+													icon: "plus",
+													title:
+														"Du kan legge til 6 tonn uten tillegg i frakt for å fylle opp lastebilen.",
+													description:
+														"Tips: Hvis du fyller opp lastebilen betaler du mindre per tonn!",
+													blockName:
+														"Du kan legge til 6 tonn uten tillegg i frakt for å fylle opp lastebilen.",
+													choices: [
+														{
+															_order: 1,
+															id: "65dc653c22ddb96d2a6a99bd",
+															text: "Jatakk, fyll opp lastebilen",
+														},
+													],
+													blockType: "multiple-choice-block",
+												},
 											],
 											isHomeDelivery: true,
-											updatedAt: "2024-02-08T13:40:11.835Z",
+											updatedAt: "2024-02-26T10:19:07.406Z",
 											createdAt: "2024-02-08T08:57:51.293Z",
 										},
 									},

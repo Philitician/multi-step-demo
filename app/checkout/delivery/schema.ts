@@ -49,7 +49,7 @@ const homeDeliveryExtendedSchema = z.object({
 	// 	}),
 	// 	description: z.string(),
 	// }),
-	isDeliveredWhileNotHome: z.boolean(),
+	isDeliveredWhileNotHome: z.enum(["true", "false"]), // This is a string because it's a radio button which can only return strings
 	deliveryTime: z.object({
 		deliveryDate: z.date(),
 		deliveryTimeRange: z.object({

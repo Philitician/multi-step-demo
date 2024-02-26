@@ -59,12 +59,15 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import React from "react";
 import { nb } from "date-fns/locale";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type ProductDeliveriesFieldProps = {
 	zoneId: number;
 	productVariant: ProductVariant;
 	productDeliveryIndex: number;
 };
+
+// TODO: Fix bug where if you change delivery method and change back again, the form values remain, but the UI doesn't reflect the values
 
 export function ProductDeliverySection(props: ProductDeliveriesFieldProps) {
 	return (
@@ -177,18 +180,39 @@ function DeliveryMethodAccordionField({
 									);
 									setValue(
 										`productDeliveries.${productDeliveryIndex}.alternative.shippingPrice`,
-										shippingPrice,
+										shippingPrice, // TODO: If item.quantity exceeds deliveryMethod.maximumLoad, the shippingPrice should be multiplied by the number of times the maximumLoad is exceeded. So the formula should be something like: shippingPrice * Math.ceil(item.quantity / deliveryMethod.maximumLoad)
 									);
-									setValue(
-										`productDeliveries.${productDeliveryIndex}.alternative.formBlocks`,
-										deliveryMethod.formBlocks?.map(
-											({ title, description }) => ({
-												title,
-												description: description || "",
-												answer: "",
-											}),
-										) || [],
-									);
+									if (
+										// if the deliveryMethod has a formBlock of type multiple-choice-block with only 1 choice,
+										// it's a checkbox where the user can choose to accept or decline the deliveryMethod.
+										// We therefore set the value to "false" to indicate that the user has declined the deliveryMethod.
+										// Inside the checkbox code we check if the answer is "false" and if so, the checkbox is unchecked.
+										deliveryMethod.formBlocks?.[0].blockType ===
+											"multiple-choice-block" &&
+										deliveryMethod.formBlocks?.[0].choices?.length === 1
+									) {
+										setValue(
+											`productDeliveries.${productDeliveryIndex}.alternative.formBlocks`,
+											deliveryMethod.formBlocks?.map(
+												({ title, description }) => ({
+													title,
+													description: description || "",
+													answer: "",
+												}),
+											) || [],
+										);
+									} else {
+										setValue(
+											`productDeliveries.${productDeliveryIndex}.alternative.formBlocks`,
+											deliveryMethod.formBlocks?.map(
+												({ title, description }) => ({
+													title,
+													description: description || "",
+													answer: "false",
+												}),
+											) || [],
+										);
+									}
 								}}
 							>
 								<Label
@@ -254,7 +278,6 @@ function FormBlockFields({
 								? "bg-red-500 bg-opacity-20 shadow-red-500 shadow mt-2 mb-3"
 								: "bg-[#e6f2eb]"
 						} rounded my-1 px-4 py-3`}
-						// TODO: Make background change to red if formBlock has errors
 					>
 						<FormField
 							control={control}
@@ -284,7 +307,10 @@ function FormBlockFields({
 									<FormControl>
 										<div>
 											{/* TODO: extract the form blocks to a separate component */}
-											{formBlock.blockType === "multiple-choice-block" ? (
+											{/* TODO: add another case for multiple-choice-block with 1 choice */}
+											{formBlock.blockType === "multiple-choice-block" &&
+											formBlock.choices?.length &&
+											formBlock.choices?.length > 1 ? (
 												<RadioGroup
 													defaultValue={field.value?.answer}
 													onValueChange={(e) => {
@@ -311,6 +337,26 @@ function FormBlockFields({
 														</div>
 													))}
 												</RadioGroup>
+											) : formBlock.blockType === "multiple-choice-block" &&
+											  formBlock.choices?.length &&
+											  formBlock.choices?.length === 1 ? (
+												<div className="flex flex-row gap-1 justify-end">
+													<Checkbox
+														id={formBlock.choices[0].id?.toString()}
+														className="bg-white"
+														checked={field.value?.answer !== "false"}
+														onCheckedChange={(checked) => {
+															const answer = checked
+																? formBlock.choices?.[0].text
+																: "false";
+															field.onChange({ ...field.value, answer });
+															return answer;
+														}}
+													/>
+													<Label htmlFor={formBlock.choices[0].id?.toString()}>
+														{formBlock.choices[0].text}
+													</Label>
+												</div>
 											) : formBlock.blockType === "text-area-block" ? (
 												<>
 													<Textarea
@@ -346,9 +392,12 @@ function HomeDeliveryFields({
 }: { deliveryMethod: DeliveryMethod }) {
 	const {
 		control,
-		getValues,
+		watch,
 		formState: { errors },
 	} = useFormContext<DeliveryStepValues>();
+
+	const deliveryDate = watch("deliveryTime.deliveryDate");
+	const deliveryTimeRange = watch("deliveryTime.deliveryTimeRange");
 
 	// type the errors correctly. This is needed because discriminated unions returns the wrong type
 	const typedErrors = errors as FieldErrors<HomeDeliveryExtendedValues>;
@@ -401,7 +450,7 @@ function HomeDeliveryFields({
 					);
 				}}
 			/>
-			<div // TODO: change background to red if either the date or time has errors
+			<div
 				className={`${
 					typedErrors.deliveryTime?.deliveryDate ||
 					typedErrors.deliveryTime?.deliveryTimeRange
@@ -451,7 +500,6 @@ function HomeDeliveryFields({
 												// TODO: Find out how many days from now the user can select a delivery date. is this always the same, or can it vary depending on the delivery method or product?
 												fromDate={new Date(Date.now() + 3600 * 1000 * 24 * 3)} // 3 days from now
 												weekStartsOn={1}
-												// set locale to norwegian
 												locale={nb}
 												initialFocus
 											/>
@@ -467,7 +515,9 @@ function HomeDeliveryFields({
 								<FormItem className="flex flex-col items-start w-full gap-1">
 									<FormLabel>Tidspunkt</FormLabel>
 									<Select
-										onValueChange={field.onChange}
+										onValueChange={(value) => {
+											return field.onChange(JSON.parse(value));
+										}}
 										defaultValue={JSON.stringify(field.value)}
 									>
 										<FormControl>
@@ -483,25 +533,25 @@ function HomeDeliveryFields({
 											// TODO: find out home many time options should be in the list
 											>
 												<SelectLabel>Tidspunkt (fra-til)</SelectLabel>
-												<SelectItem value={'{from:"00.00", to:"03.00"}'}>
+												<SelectItem value={'{"from":"00.00", "to":"03.00"}'}>
 													00:00-03:00
 												</SelectItem>
-												<SelectItem value={'{from:"03.00", to:"06.00"}'}>
+												<SelectItem value={'{"from":"03.00", "to":"06.00"}'}>
 													03:00-06:00
 												</SelectItem>
-												<SelectItem value={'{from:"06.00", to:"09.00"}'}>
+												<SelectItem value={'{"from":"06.00", "to":"09.00"}'}>
 													06:00-09:00
 												</SelectItem>
-												<SelectItem value={'{from:"09.00", to:"12.00"}'}>
+												<SelectItem value={'{"from":"09.00", "to":"12.00"}'}>
 													09:00-12:00
 												</SelectItem>
-												<SelectItem value={'{from:"12.00", to:"15.00"}'}>
+												<SelectItem value={'{"from":"12.00", "to":"15.00"}'}>
 													12:00-15:00
 												</SelectItem>
-												<SelectItem value={'{from:"15.00", to:"18.00"}'}>
+												<SelectItem value={'{"from":"15.00", "to":"18.00"}'}>
 													15:00-18:00
 												</SelectItem>
-												<SelectItem value={'{from:"18.00", to:"21.00"}'}>
+												<SelectItem value={'{"from":"18.00", "to":"21.00"}'}>
 													18:00-21:00
 												</SelectItem>
 												<SelectItem value={'{from:"21.00", to:"00.00"}'}>
@@ -514,38 +564,26 @@ function HomeDeliveryFields({
 							)}
 						/>
 					</div>
-					{
-						// TODO: Make deliveryTime.deliveryDate and deliveryTime.deliveryTimeRange responsive
-						getValues("deliveryTime.deliveryDate") && (
-							<div>
-								<b>Levering: </b>
-								{capitalizeFirstLetter(
-									// TODO: Make deliveryDate responsive
-									getValues("deliveryTime.deliveryDate").toLocaleDateString(
-										"no-nb",
-										{
-											weekday: "long",
-											day: "numeric",
-											month: "long",
-											year: "numeric",
-										},
-									),
-								)}
-								{
-									// TODO: Make deliveryTimeRange responsive
-									getValues("deliveryTime.deliveryTimeRange") && (
-										<span className="px-0 mx-0">
-											{" "}
-											mellom kl.{" "}
-											{JSON.stringify(
-												getValues("deliveryTime.deliveryTimeRange"),
-											)}
-										</span>
-									)
-								}
-							</div>
-						)
-					}
+
+					{deliveryDate && (
+						<div>
+							<b>Levering: </b>
+							{capitalizeFirstLetter(
+								deliveryDate.toLocaleDateString("no-nb", {
+									weekday: "long",
+									day: "numeric",
+									month: "long",
+									year: "numeric",
+								}),
+							)}
+							{deliveryTimeRange && (
+								<span className="px-0 mx-0">
+									{" "}
+									mellom kl. {deliveryTimeRange.from}-{deliveryTimeRange.to}
+								</span>
+							)}
+						</div>
+					)}
 				</div>
 			</div>
 		</>
